@@ -2,9 +2,9 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 # Cấu hình giao diện trang web
-st.set_page_config(page_title="Flappy Bird Online", page_icon="🐦", layout="centered")
+st.set_page_config(page_title="Flappy Bird Siêu Chậm", page_icon="🐦", layout="centered")
 
-st.title("🐦 Flappy Bird Siêu Nhẹ Nhàng")
+st.title("🐦 Flappy Bird - Chế Độ Siêu Chậm")
 st.write("Dùng phím **Cách (Space)** để điều khiển chú chim bay qua các ống nước nhé!")
 
 game_html = """
@@ -35,11 +35,11 @@ game_html = """
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
 
-        // ĐÃ ĐIỀU CHỈNH LẠI: Trọng lực rất nhẹ (0.22) và lực nhảy vừa phải (-5.5) giúp chim bay cực kỳ từ tốn
-        let bird = { x: 50, y: 150, width: 28, height: 28, gravity: 0.22, lift: -5.5, velocity: 0 };
+        // CHẾ ĐỘ SIÊU CHẬM: Trọng lực siêu nhẹ (0.1) và lực nhảy nhỏ (-4.2)
+        let bird = { x: 50, y: 150, width: 28, height: 28, gravity: 0.1, lift: -4.2, velocity: 0 };
         let pipes = [];
         let pipeWidth = 45;
-        let pipeGap = 140; // Nới rộng thêm khoảng cách giữa 2 ống cho thoáng
+        let pipeGap = 150; // Khoảng cách giữa 2 ống rất rộng
         let frameCount = 0;
         let score = 0;
         let isGameOver = false;
@@ -76,8 +76,8 @@ game_html = """
                 isGameOver = true;
             }
 
-            // Tạo cột thưa hơn một chút (110 khung hình)
-            if (frameCount % 110 === 0) {
+            // Tạo cột thưa hẳn ra (140 khung hình)
+            if (frameCount % 140 === 0) {
                 let minHeight = 50;
                 let maxHeight = canvas.height - pipeGap - 50;
                 let height = Math.floor(Math.random() * (maxHeight - minHeight + 1)) + minHeight;
@@ -85,7 +85,7 @@ game_html = """
             }
 
             for (let i = pipes.length - 1; i >= 0; i--) {
-                pipes[i].x -= 1.8; // Giảm nhẹ tốc độ di chuyển của ống cho dễ nhìn
+                pipes[i].x -= 1.2; // Ống trôi cực kỳ chậm
 
                 // Va chạm với cột
                 if (
