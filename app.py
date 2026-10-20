@@ -2,10 +2,10 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 # Cấu hình giao diện trang web
-st.set_page_config(page_title="Flappy Phone Bird - Siêu Chậm", page_icon="🐦", layout="centered")
+st.set_page_config(page_title="Flappy Phone Bird - Chọn Độ Khó", page_icon="🐦", layout="centered")
 
-st.title("🐦 Flappy Phone Bird - Chế Độ Siêu Chậm")
-st.write("Dùng phím **Cách (Space)** để điều khiển chú chim vỗ cánh bay qua các cột điện thoại nhé!")
+st.title("🐦 Flappy Phone Bird - Chọn Mức Độ Khó")
+st.write("Chọn độ khó và dùng phím **Cách (Space)** để điều khiển chú chim vỗ cánh bay qua các cột điện thoại nhé!")
 
 game_html = """
 <!DOCTYPE html>
@@ -22,6 +22,23 @@ game_html = """
             margin: 0;
             padding: 10px;
         }
+        .menu {
+            margin-bottom: 10px;
+        }
+        button {
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+        button.active {
+            background-color: #e67e22;
+        }
         canvas {
             border: 2px solid #fff;
             background-color: #70c5ce;
@@ -30,10 +47,43 @@ game_html = """
     </style>
 </head>
 <body>
+    <div class="menu">
+        <button id="btnEasy" onclick="setDifficulty('easy')">🟢 Dễ (Siêu Chậm)</button>
+        <button id="btnMedium" onclick="setDifficulty('medium')">🟠 Trung Bình</button>
+    </div>
+    
     <canvas id="gameCanvas" width="320" height="480"></canvas>
+
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
+
+        // Cấu hình các mức độ khó
+        let currentDifficulty = "easy"; // Mặc định là Dễ
+
+        const settings = {
+            easy: {
+                gravity: 0.04,
+                lift: -3.0,
+                pipeSpeed: 0.7,
+                pipeGap: 175,
+                spawnRate: 210
+            },
+            medium: {
+                gravity: 0.08,
+                lift: -4.0,
+                pipeSpeed: 1.4,
+                pipeGap: 145,
+                spawnRate: 140
+            }
+        };
+
+        function setDifficulty(level) {
+            currentDifficulty = level;
+            document.getElementById("btnEasy").className = level === "easy" ? "active" : "";
+            document.getElementById("btnMedium").className = level === "medium" ? "active" : "";
+            resetGame();
+        }
 
         // Âm thanh Web Audio API
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -74,16 +124,13 @@ game_html = """
             }
         }
 
-        // ĐÃ GIẢM TỐC ĐỘ: Trọng lực siêu nhẹ (0.04), lực nhảy nhỏ (-3.0)
         let bird = { 
             x: 50, y: 150, width: 32, height: 24, 
-            gravity: 0.04, lift: -3.0, velocity: 0,
-            rotation: 0 
+            velocity: 0, rotation: 0 
         };
         
         let pipes = [];
         let pipeWidth = 50;
-        let pipeGap = 175; // Khoảng cách giữa 2 cột rất rộng
         let frameCount = 0;
         let score = 0;
         let highScore = localStorage.getItem("flappyHighScore") || 0;
@@ -96,7 +143,7 @@ game_html = """
                 if (isGameOver) {
                     resetGame();
                 } else {
-                    bird.velocity = bird.lift;
+                    bird.velocity = settings[currentDifficulty].lift;
                     playSound("jump");
                 }
             }
@@ -116,7 +163,9 @@ game_html = """
         function update() {
             if (isGameOver) return;
 
-            bird.velocity += bird.gravity;
+            let conf = settings[currentDifficulty];
+
+            bird.velocity += conf.gravity;
             bird.y += bird.velocity;
 
             bird.rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, bird.velocity * 0.1));
@@ -129,16 +178,16 @@ game_html = """
                 checkHighScore();
             }
 
-            // Tạo cột thưa hơn (210 khung hình)
-            if (frameCount % 210 === 0) {
+            // Tạo cột theo độ khó
+            if (frameCount % conf.spawnRate === 0) {
                 let minHeight = 60;
-                let maxHeight = canvas.height - pipeGap - 60;
+                let maxHeight = canvas.height - conf.pipeGap - 60;
                 let height = Math.floor(Math.random() * (maxHeight - minHeight + 1)) + minHeight;
-                pipes.push({ x: canvas.width, top: height, bottom: canvas.height - height - pipeGap, passed: false });
+                pipes.push({ x: canvas.width, top: height, bottom: canvas.height - height - conf.pipeGap, passed: false });
             }
 
             for (let i = pipes.length - 1; i >= 0; i--) {
-                pipes[i].x -= 0.7; // Cột trôi siêu chậm (0.7)
+                pipes[i].x -= conf.pipeSpeed;
 
                 // Va chạm với cột điện thoại
                 if (
@@ -301,10 +350,11 @@ game_html = """
             }
         }
 
-        loop();
+        // Kích hoạt nút Dễ mặc định và chạy game
+        setDifficulty('easy');
     </script>
 </body>
 </html>
 """
 
-components.html(game_html, height=550)
+components.html(game_html, height=580)
