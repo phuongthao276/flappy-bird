@@ -2,9 +2,9 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 # Cấu hình giao diện trang web
-st.set_page_config(page_title="Flappy Phone Bird", page_icon="🐦", layout="centered")
+st.set_page_config(page_title="Flappy Phone Bird - Siêu Chậm", page_icon="🐦", layout="centered")
 
-st.title("🐦 Flappy Phone Bird - Phiên Bản Điện Thoại")
+st.title("🐦 Flappy Phone Bird - Chế Độ Siêu Chậm")
 st.write("Dùng phím **Cách (Space)** để điều khiển chú chim vỗ cánh bay qua các cột điện thoại nhé!")
 
 game_html = """
@@ -74,21 +74,21 @@ game_html = """
             }
         }
 
-        // Cấu hình chim (chế độ siêu chậm, mượt)
+        // ĐÃ GIẢM TỐC ĐỘ: Trọng lực siêu nhẹ (0.04), lực nhảy nhỏ (-3.0)
         let bird = { 
             x: 50, y: 150, width: 32, height: 24, 
-            gravity: 0.06, lift: -3.5, velocity: 0,
+            gravity: 0.04, lift: -3.0, velocity: 0,
             rotation: 0 
         };
         
         let pipes = [];
         let pipeWidth = 50;
-        let pipeGap = 160;
+        let pipeGap = 175; // Khoảng cách giữa 2 cột rất rộng
         let frameCount = 0;
         let score = 0;
         let highScore = localStorage.getItem("flappyHighScore") || 0;
         let isGameOver = false;
-        let hitEffectTimer = 0; // Hiệu ứng chớp màn hình khi va chạm
+        let hitEffectTimer = 0;
 
         document.addEventListener("keydown", function(e) {
             if (e.code === "Space") {
@@ -119,7 +119,6 @@ game_html = """
             bird.velocity += bird.gravity;
             bird.y += bird.velocity;
 
-            // Xoay góc con chim theo vận tốc rơi/nhảy
             bird.rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, bird.velocity * 0.1));
 
             // Kiểm tra chạm đất hoặc bay quá cao
@@ -130,8 +129,8 @@ game_html = """
                 checkHighScore();
             }
 
-            // Tạo cột điện thoại
-            if (frameCount % 180 === 0) {
+            // Tạo cột thưa hơn (210 khung hình)
+            if (frameCount % 210 === 0) {
                 let minHeight = 60;
                 let maxHeight = canvas.height - pipeGap - 60;
                 let height = Math.floor(Math.random() * (maxHeight - minHeight + 1)) + minHeight;
@@ -139,7 +138,7 @@ game_html = """
             }
 
             for (let i = pipes.length - 1; i >= 0; i--) {
-                pipes[i].x -= 0.9;
+                pipes[i].x -= 0.7; // Cột trôi siêu chậm (0.7)
 
                 // Va chạm với cột điện thoại
                 if (
@@ -174,7 +173,6 @@ game_html = """
             }
         }
 
-        // Vẽ cột dạng các chiếc điện thoại xếp chồng lên nhau
         function drawPhonePipes(x, y, width, height, isTop) {
             let phoneHeight = 70;
             let currentY = isTop ? 0 : y;
@@ -184,30 +182,23 @@ game_html = """
             while (drawnHeight < targetHeight) {
                 let h = Math.min(phoneHeight, targetHeight - drawnHeight);
                 
-                // Thân điện thoại
                 ctx.fillStyle = "#333";
                 ctx.fillRect(x, currentY, width, h);
                 ctx.strokeStyle = "#777";
                 ctx.lineWidth = 2;
                 ctx.strokeRect(x, currentY, width, h);
 
-                // Màn hình điện thoại phát sáng nhẹ
                 if (h > 30) {
                     ctx.fillStyle = "#4a90e2";
                     ctx.fillRect(x + 5, currentY + 10, width - 10, h - 25);
                     
-                    // Nút home giả lập
                     ctx.fillStyle = "#bbb";
                     ctx.beginPath();
                     ctx.arc(x + width / 2, currentY + h - 7, 3, 0, Math.PI * 2);
                     ctx.fill();
                 }
 
-                if (isTop) {
-                    currentY += h;
-                } else {
-                    currentY += h; // Hoặc vẽ ngược lên nếu từ dưới lên
-                }
+                currentY += h;
                 drawnHeight += h;
                 if (isTop && currentY >= height) break;
             }
@@ -216,24 +207,19 @@ game_html = """
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Vẽ background mây trời nhẹ nhàng
             ctx.fillStyle = "#70c5ce";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Vẽ các cột điện thoại
             for (let i = 0; i < pipes.length; i++) {
-                // Cột trên
                 drawPhonePipes(pipes[i].x, 0, pipeWidth, pipes[i].top, true);
-                // Cột dưới
                 drawPhonePipes(pipes[i].x, canvas.height - pipes[i].bottom, pipeWidth, pipes[i].bottom, false);
             }
 
-            // Vẽ chú chim có hiệu ứng vỗ cánh (xoay theo góc bay)
+            // Vẽ chim vỗ cánh
             ctx.save();
             ctx.translate(bird.x + bird.width / 2, bird.y + bird.height / 2);
             ctx.rotate(bird.rotation);
 
-            // Thân chim vàng
             ctx.fillStyle = "#f1c40f";
             ctx.beginPath();
             ctx.ellipse(0, 0, bird.width / 2, bird.height / 2, 0, 0, Math.PI * 2);
@@ -242,7 +228,6 @@ game_html = """
             ctx.lineWidth = 2;
             ctx.stroke();
 
-            // Mỏ chim
             ctx.fillStyle = "#e67e22";
             ctx.beginPath();
             ctx.moveTo(bird.width / 2 - 2, -4);
@@ -250,7 +235,6 @@ game_html = """
             ctx.lineTo(bird.width / 2 - 2, 4);
             ctx.fill();
 
-            // Mắt chim
             ctx.fillStyle = "white";
             ctx.beginPath();
             ctx.arc(6, -4, 5, 0, Math.PI * 2);
@@ -260,35 +244,30 @@ game_html = """
             ctx.arc(8, -4, 2, 0, Math.PI * 2);
             ctx.fill();
 
-            // Cánh chim vỗ (đổi vị trí dựa theo frameCount để tạo hiệu ứng vỗ)
             ctx.fillStyle = "#f39c12";
             ctx.beginPath();
-            let wingOffset = Math.floor(frameCount / 6) % 2 === 0 ? -6 : 4;
+            let wingOffset = Math.floor(frameCount / 8) % 2 === 0 ? -6 : 4;
             ctx.ellipse(-4, wingOffset, 8, 5, Math.PI / 4, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
             ctx.restore();
 
-            // Hiệu ứng chớp đỏ khi va chạm
             if (hitEffectTimer > 0) {
                 ctx.fillStyle = "rgba(255, 0, 0, 0.4)";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 hitEffectTimer--;
             }
 
-            // Hiển thị điểm số góc màn hình
             ctx.fillStyle = "white";
             ctx.font = "bold 18px Arial";
             ctx.fillText("Điểm: " + score, 15, 30);
             ctx.fillText("Cao nhất: " + highScore, 15, 55);
 
-            // Màn hình Game Over kèm Bảng xếp hạng và hiệu ứng nứt màn hình
             if (isGameOver) {
                 ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                // Vẽ vết nứt giả lập trên màn hình game over
                 ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
                 ctx.lineWidth = 2;
                 ctx.beginPath();
@@ -318,7 +297,7 @@ game_html = """
             if (!isGameOver) {
                 requestAnimationFrame(loop);
             } else {
-                draw(); // Vẽ lại khung cuối cùng để hiện bảng game over
+                draw();
             }
         }
 
