@@ -4,10 +4,9 @@ import streamlit.components.v1 as components
 # Cấu hình giao diện trang web
 st.set_page_config(page_title="Flappy Bird Online", page_icon="🐦", layout="centered")
 
-st.title("🐦 Flappy Bird Siêu Mượt")
+st.title("🐦 Flappy Bird Siêu Nhẹ Nhàng")
 st.write("Dùng phím **Cách (Space)** để điều khiển chú chim bay qua các ống nước nhé!")
 
-# Đoạn mã HTML/JS mới: Chim rơi mượt hơn và có hình chú chim 🐦
 game_html = """
 <!DOCTYPE html>
 <html lang="vi">
@@ -36,11 +35,11 @@ game_html = """
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
 
-        // Đã giảm trọng lực (gravity: 0.35) và lực nhảy (lift: -7) để chim rơi từ từ, dễ điều khiển hơn
-        let bird = { x: 50, y: 150, width: 28, height: 28, gravity: 0.35, lift: -7, velocity: 0 };
+        // ĐÃ ĐIỀU CHỈNH LẠI: Trọng lực rất nhẹ (0.22) và lực nhảy vừa phải (-5.5) giúp chim bay cực kỳ từ tốn
+        let bird = { x: 50, y: 150, width: 28, height: 28, gravity: 0.22, lift: -5.5, velocity: 0 };
         let pipes = [];
         let pipeWidth = 45;
-        let pipeGap = 130; // Nới rộng khoảng cách giữa 2 ống một chút cho dễ qua
+        let pipeGap = 140; // Nới rộng thêm khoảng cách giữa 2 ống cho thoáng
         let frameCount = 0;
         let score = 0;
         let isGameOver = false;
@@ -77,8 +76,8 @@ game_html = """
                 isGameOver = true;
             }
 
-            // Tạo cột mới chậm hơn một chút (100 khung hình)
-            if (frameCount % 100 === 0) {
+            // Tạo cột thưa hơn một chút (110 khung hình)
+            if (frameCount % 110 === 0) {
                 let minHeight = 50;
                 let maxHeight = canvas.height - pipeGap - 50;
                 let height = Math.floor(Math.random() * (maxHeight - minHeight + 1)) + minHeight;
@@ -86,7 +85,7 @@ game_html = """
             }
 
             for (let i = pipes.length - 1; i >= 0; i--) {
-                pipes[i].x -= 2; // Tốc độ di chuyển của ống
+                pipes[i].x -= 1.8; // Giảm nhẹ tốc độ di chuyển của ống cho dễ nhìn
 
                 // Va chạm với cột
                 if (
@@ -113,7 +112,7 @@ game_html = """
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // THAY ĐỔI: Thay khối vuông thành Emoji chú chim 🐦 sinh động
+            // Vẽ chú chim 🐦
             ctx.font = "28px Arial";
             ctx.fillText("🐦", bird.x - 2, bird.y + 22);
 
