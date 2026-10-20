@@ -2,10 +2,10 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 # Cấu hình giao diện trang web
-st.set_page_config(page_title="Flappy Bird Đỉnh Cao", page_icon="🐦", layout="centered")
+st.set_page_config(page_title="Flappy Phone Bird", page_icon="🐦", layout="centered")
 
-st.title("🐦 Flappy Bird - Có Bảng Xếp Hạng & Âm Thanh")
-st.write("Dùng phím **Cách (Space)** để điều khiển chú chim bay qua các ống nước nhé!")
+st.title("🐦 Flappy Phone Bird - Phiên Bản Điện Thoại")
+st.write("Dùng phím **Cách (Space)** để điều khiển chú chim vỗ cánh bay qua các cột điện thoại nhé!")
 
 game_html = """
 <!DOCTYPE html>
@@ -35,7 +35,7 @@ game_html = """
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
 
-        // Tạo âm thanh bằng Web Audio API (không cần file nhạc ngoài)
+        // Âm thanh Web Audio API
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playSound(type) {
             if (audioCtx.state === 'suspended') {
@@ -74,17 +74,21 @@ game_html = """
             }
         }
 
-        // Cấu hình chim và độ chậm
-        let bird = { x: 50, y: 150, width: 28, height: 28, gravity: 0.06, lift: -3.5, velocity: 0 };
+        // Cấu hình chim (chế độ siêu chậm, mượt)
+        let bird = { 
+            x: 50, y: 150, width: 32, height: 24, 
+            gravity: 0.06, lift: -3.5, velocity: 0,
+            rotation: 0 
+        };
+        
         let pipes = [];
-        let pipeWidth = 45;
+        let pipeWidth = 50;
         let pipeGap = 160;
         let frameCount = 0;
         let score = 0;
-        
-        // Lấy Điểm cao nhất từ bộ nhớ trình duyệt (localStorage)
         let highScore = localStorage.getItem("flappyHighScore") || 0;
         let isGameOver = false;
+        let hitEffectTimer = 0; // Hiệu ứng chớp màn hình khi va chạm
 
         document.addEventListener("keydown", function(e) {
             if (e.code === "Space") {
@@ -105,6 +109,7 @@ game_html = """
             score = 0;
             frameCount = 0;
             isGameOver = false;
+            hitEffectTimer = 0;
             loop();
         }
 
@@ -114,17 +119,21 @@ game_html = """
             bird.velocity += bird.gravity;
             bird.y += bird.velocity;
 
+            // Xoay góc con chim theo vận tốc rơi/nhảy
+            bird.rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, bird.velocity * 0.1));
+
             // Kiểm tra chạm đất hoặc bay quá cao
             if (bird.y + bird.height >= canvas.height || bird.y <= 0) {
                 isGameOver = true;
+                hitEffectTimer = 20;
                 playSound("die");
                 checkHighScore();
             }
 
-            // Tạo cột
+            // Tạo cột điện thoại
             if (frameCount % 180 === 0) {
-                let minHeight = 50;
-                let maxHeight = canvas.height - pipeGap - 50;
+                let minHeight = 60;
+                let maxHeight = canvas.height - pipeGap - 60;
                 let height = Math.floor(Math.random() * (maxHeight - minHeight + 1)) + minHeight;
                 pipes.push({ x: canvas.width, top: height, bottom: canvas.height - height - pipeGap, passed: false });
             }
@@ -132,13 +141,14 @@ game_html = """
             for (let i = pipes.length - 1; i >= 0; i--) {
                 pipes[i].x -= 0.9;
 
-                // Va chạm với cột
+                // Va chạm với cột điện thoại
                 if (
                     bird.x < pipes[i].x + pipeWidth &&
                     bird.x + bird.width > pipes[i].x &&
                     (bird.y < pipes[i].top || bird.y + bird.height > canvas.height - pipes[i].bottom)
                 ) {
                     isGameOver = true;
+                    hitEffectTimer = 20;
                     playSound("die");
                     checkHighScore();
                 }
@@ -164,44 +174,141 @@ game_html = """
             }
         }
 
+        // Vẽ cột dạng các chiếc điện thoại xếp chồng lên nhau
+        function drawPhonePipes(x, y, width, height, isTop) {
+            let phoneHeight = 70;
+            let currentY = isTop ? 0 : y;
+            let targetHeight = isTop ? height : canvas.height - y;
+            let drawnHeight = 0;
+
+            while (drawnHeight < targetHeight) {
+                let h = Math.min(phoneHeight, targetHeight - drawnHeight);
+                
+                // Thân điện thoại
+                ctx.fillStyle = "#333";
+                ctx.fillRect(x, currentY, width, h);
+                ctx.strokeStyle = "#777";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x, currentY, width, h);
+
+                // Màn hình điện thoại phát sáng nhẹ
+                if (h > 30) {
+                    ctx.fillStyle = "#4a90e2";
+                    ctx.fillRect(x + 5, currentY + 10, width - 10, h - 25);
+                    
+                    // Nút home giả lập
+                    ctx.fillStyle = "#bbb";
+                    ctx.beginPath();
+                    ctx.arc(x + width / 2, currentY + h - 7, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                if (isTop) {
+                    currentY += h;
+                } else {
+                    currentY += h; // Hoặc vẽ ngược lên nếu từ dưới lên
+                }
+                drawnHeight += h;
+                if (isTop && currentY >= height) break;
+            }
+        }
+
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Vẽ chú chim 🐦
-            ctx.font = "28px Arial";
-            ctx.fillText("🐦", bird.x - 2, bird.y + 22);
+            // Vẽ background mây trời nhẹ nhàng
+            ctx.fillStyle = "#70c5ce";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Vẽ ống nước màu xanh lá
-            ctx.fillStyle = "#2ecc71";
+            // Vẽ các cột điện thoại
             for (let i = 0; i < pipes.length; i++) {
-                ctx.fillRect(pipes[i].x, 0, pipeWidth, pipes[i].top);
-                ctx.fillRect(pipes[i].x, canvas.height - pipes[i].bottom, pipeWidth, pipes[i].bottom);
+                // Cột trên
+                drawPhonePipes(pipes[i].x, 0, pipeWidth, pipes[i].top, true);
+                // Cột dưới
+                drawPhonePipes(pipes[i].x, canvas.height - pipes[i].bottom, pipeWidth, pipes[i].bottom, false);
             }
 
-            // Hiển thị điểm số và điểm cao nhất hiện tại trên góc màn hình
+            // Vẽ chú chim có hiệu ứng vỗ cánh (xoay theo góc bay)
+            ctx.save();
+            ctx.translate(bird.x + bird.width / 2, bird.y + bird.height / 2);
+            ctx.rotate(bird.rotation);
+
+            // Thân chim vàng
+            ctx.fillStyle = "#f1c40f";
+            ctx.beginPath();
+            ctx.ellipse(0, 0, bird.width / 2, bird.height / 2, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = "#d35400";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Mỏ chim
+            ctx.fillStyle = "#e67e22";
+            ctx.beginPath();
+            ctx.moveTo(bird.width / 2 - 2, -4);
+            ctx.lineTo(bird.width / 2 + 8, 0);
+            ctx.lineTo(bird.width / 2 - 2, 4);
+            ctx.fill();
+
+            // Mắt chim
             ctx.fillStyle = "white";
-            ctx.font = "18px Arial";
+            ctx.beginPath();
+            ctx.arc(6, -4, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = "black";
+            ctx.beginPath();
+            ctx.arc(8, -4, 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Cánh chim vỗ (đổi vị trí dựa theo frameCount để tạo hiệu ứng vỗ)
+            ctx.fillStyle = "#f39c12";
+            ctx.beginPath();
+            let wingOffset = Math.floor(frameCount / 6) % 2 === 0 ? -6 : 4;
+            ctx.ellipse(-4, wingOffset, 8, 5, Math.PI / 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.restore();
+
+            // Hiệu ứng chớp đỏ khi va chạm
+            if (hitEffectTimer > 0) {
+                ctx.fillStyle = "rgba(255, 0, 0, 0.4)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                hitEffectTimer--;
+            }
+
+            // Hiển thị điểm số góc màn hình
+            ctx.fillStyle = "white";
+            ctx.font = "bold 18px Arial";
             ctx.fillText("Điểm: " + score, 15, 30);
             ctx.fillText("Cao nhất: " + highScore, 15, 55);
 
-            // Màn hình Game Over kèm Bảng xếp hạng nhỏ
+            // Màn hình Game Over kèm Bảng xếp hạng và hiệu ứng nứt màn hình
             if (isGameOver) {
-                ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+                ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Vẽ vết nứt giả lập trên màn hình game over
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(50, 50); ctx.lineTo(120, 150); ctx.lineTo(90, 200);
+                ctx.moveTo(270, 80); ctx.lineTo(200, 180);
+                ctx.stroke();
 
                 ctx.fillStyle = "#f1c40f";
                 ctx.font = "bold 26px Arial";
-                ctx.fillText("GAME OVER", 80, 180);
+                ctx.fillText("GAME OVER", 80, 170);
 
                 ctx.fillStyle = "white";
-                ctx.font = "18px Arial";
-                ctx.fillText("🏆 BẢNG XẾP HẠNG 🏆", 65, 230);
-                ctx.fillText("Điểm của bạn: " + score, 90, 270);
-                ctx.fillText("Kỷ lục cao nhất: " + highScore, 80, 300);
+                ctx.font = "16px Arial";
+                ctx.fillText("🏆 BẢNG XẾP HẠNG 🏆", 75, 220);
+                ctx.fillText("Điểm của bạn: " + score, 100, 255);
+                ctx.fillText("Kỷ lục cao nhất: " + highScore, 90, 285);
 
                 ctx.fillStyle = "#2ecc71";
                 ctx.font = "bold 16px Arial";
-                ctx.fillText("Nhấn Space để chơi lại", 75, 360);
+                ctx.fillText("Nhấn Space để chơi lại", 75, 345);
             }
         }
 
@@ -210,6 +317,8 @@ game_html = """
             draw();
             if (!isGameOver) {
                 requestAnimationFrame(loop);
+            } else {
+                draw(); // Vẽ lại khung cuối cùng để hiện bảng game over
             }
         }
 
