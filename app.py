@@ -2,12 +2,12 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 # Cấu hình giao diện trang web
-st.set_page_config(page_title="Flappy Bird Web", page_icon="🐦", layout="centered")
+st.set_page_config(page_title="Flappy Bird Online", page_icon="🐦", layout="centered")
 
-st.title("🐦 Flappy Bird Online")
+st.title("🐦 Flappy Bird Siêu Mượt")
 st.write("Dùng phím **Cách (Space)** để điều khiển chú chim bay qua các ống nước nhé!")
 
-# Đoạn mã HTML/JS của game Flappy Bird được nhúng trực tiếp vào Streamlit
+# Đoạn mã HTML/JS mới: Chim rơi mượt hơn và có hình chú chim 🐦
 game_html = """
 <!DOCTYPE html>
 <html lang="vi">
@@ -36,17 +36,17 @@ game_html = """
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
 
-        let bird = { x: 50, y: 150, width: 20, height: 20, gravity: 0.6, lift: -10, velocity: 0 };
+        // Đã giảm trọng lực (gravity: 0.35) và lực nhảy (lift: -7) để chim rơi từ từ, dễ điều khiển hơn
+        let bird = { x: 50, y: 150, width: 28, height: 28, gravity: 0.35, lift: -7, velocity: 0 };
         let pipes = [];
-        let pipeWidth = 40;
-        let pipeGap = 120;
+        let pipeWidth = 45;
+        let pipeGap = 130; // Nới rộng khoảng cách giữa 2 ống một chút cho dễ qua
         let frameCount = 0;
         let score = 0;
         let isGameOver = false;
 
         document.addEventListener("keydown", function(e) {
             if (e.code === "Space") {
-                // Ngăn chặn cuộn trang web khi bấm Space
                 e.preventDefault(); 
                 if (isGameOver) {
                     resetGame();
@@ -72,11 +72,13 @@ game_html = """
             bird.velocity += bird.gravity;
             bird.y += bird.velocity;
 
+            // Kiểm tra chạm đất hoặc bay quá cao
             if (bird.y + bird.height >= canvas.height || bird.y <= 0) {
                 isGameOver = true;
             }
 
-            if (frameCount % 90 === 0) {
+            // Tạo cột mới chậm hơn một chút (100 khung hình)
+            if (frameCount % 100 === 0) {
                 let minHeight = 50;
                 let maxHeight = canvas.height - pipeGap - 50;
                 let height = Math.floor(Math.random() * (maxHeight - minHeight + 1)) + minHeight;
@@ -84,8 +86,9 @@ game_html = """
             }
 
             for (let i = pipes.length - 1; i >= 0; i--) {
-                pipes[i].x -= 2;
+                pipes[i].x -= 2; // Tốc độ di chuyển của ống
 
+                // Va chạm với cột
                 if (
                     bird.x < pipes[i].x + pipeWidth &&
                     bird.x + bird.width > pipes[i].x &&
@@ -94,6 +97,7 @@ game_html = """
                     isGameOver = true;
                 }
 
+                // Cộng điểm
                 if (!pipes[i].passed && pipes[i].x + pipeWidth < bird.x) {
                     score++;
                     pipes[i].passed = true;
@@ -109,21 +113,21 @@ game_html = """
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Vẽ chim
-            ctx.fillStyle = "#f1c40f";
-            ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
+            // THAY ĐỔI: Thay khối vuông thành Emoji chú chim 🐦 sinh động
+            ctx.font = "28px Arial";
+            ctx.fillText("🐦", bird.x - 2, bird.y + 22);
 
-            // Vẽ ống
+            // Vẽ ống nước màu xanh lá
             ctx.fillStyle = "#2ecc71";
             for (let i = 0; i < pipes.length; i++) {
                 ctx.fillRect(pipes[i].x, 0, pipeWidth, pipes[i].top);
                 ctx.fillRect(pipes[i].x, canvas.height - pipes[i].bottom, pipeWidth, pipes[i].bottom);
             }
 
-            // Điểm số
+            // Hiển thị điểm số
             ctx.fillStyle = "white";
             ctx.font = "20px Arial";
-            ctx.fillText("Điểm: " + score, 10, 30);
+            ctx.fillText("Điểm: " + score, 15, 35);
 
             if (isGameOver) {
                 ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
@@ -151,5 +155,4 @@ game_html = """
 </html>
 """
 
-# Hiển thị game HTML trong Streamlit (đặt chiều cao khung là 550 pixel)
 components.html(game_html, height=550)
